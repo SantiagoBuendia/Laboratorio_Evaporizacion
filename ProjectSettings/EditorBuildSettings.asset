@@ -11,8 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/EscenaFusion.unity
     guid: c88a6ae8eb1ecf6408d440f3b19372d5
+  - enabled: 1
+    path: Assets/Scenes/Laboratorio_Evaporizacion.unity
+    guid: a26aee0fcf7e78546bc2225a00dbe129
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 7c4306429c02ced44b0b1fa6c4d859a7, type: 2}
+    UnityEditor.XR.VisionOS.VisionOSSettings: {fileID: 11400000, guid: da7c12666db0a3e4c8ae6cd5a4bde5f7, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.polyspatial.xr.xr_settings: {fileID: 11400000, guid: 89f21907ab297b743b6e8c80853d6e7d, type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 6110e3814f53dc040ba4d70c87235efe, type: 2}

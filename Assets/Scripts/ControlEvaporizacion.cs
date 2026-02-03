@@ -21,6 +21,9 @@ public class ControlEvaporizacion : MonoBehaviour
     bool aguaEvaporandose = false;
     bool vaporMostrado = false;
 
+    private float tiempoInicioSimulacion;
+    private bool simulacionIniciadaBD = false;
+
     // ⬇️ ADICIÓN: límite máximo de temperatura
     private const float TEMPERATURA_MAXIMA = 150f;
 
@@ -59,6 +62,21 @@ public class ControlEvaporizacion : MonoBehaviour
     void Update()
     {
         if (!jugador.hieloEnOlla) return;
+
+        if (!simulacionIniciadaBD)
+        {
+            simulacionIniciadaBD = true;
+            tiempoInicioSimulacion = Time.time;
+
+            GestorSimulacion.IniciarSimulacion(
+                SesionUsuario.IdUsuario,
+                "Evaporizacion de la materia",
+                "Proceso completo de solido, liquido a gaseoso",
+                "VR"
+            );
+            Debug.Log("Simulación iniciada en BD para Usuario: " + SesionUsuario.IdUsuario);
+        }
+
         if (!estufaEncendida) return;
 
         temperatura += Time.deltaTime * velocidadAumentoTemp;
@@ -115,6 +133,32 @@ public class ControlEvaporizacion : MonoBehaviour
                 if (!vaporMostrado)
                     MostrarVapor();
 
+                // 1. Registrar resultado final (Temperatura)
+                GestorSimulacionResultado.RegistrarResultado(
+                   GestorSimulacion.idSimulacionActual,
+                   "Temperatura final evaporacion",
+                   temperatura.ToString("F1"),
+                   "°C"
+               );
+
+                // 2. Finalizar simulación y enviar duración
+                int duracionReal = (int)(Time.time - tiempoInicioSimulacion);
+                GestorSimulacionFinalizar.FinalizarSimulacion(
+                    GestorSimulacion.idSimulacionActual,
+                    duracionReal
+                );
+
+                if (textoUI != null)
+                {
+                    textoUI.text = "¡EXPERIMENTO COMPLETADO!";
+                    textoUI.color = Color.green;
+                }
+
+                Debug.Log("Evaporización completada. Datos enviados a BD.");
+
+                // 3. Cerrar aplicación después de 5 segundos
+                Invoke("CerrarAplicacion", 5f);
+
                 // PROCESO LISTO PARA NUEVO HIELO
                 jugador.hieloEnOlla = false;
                 estufaEncendida = false;
@@ -162,6 +206,14 @@ public class ControlEvaporizacion : MonoBehaviour
 
         if (luzEstufa != null)
             luzEstufa.enabled = estufaEncendida;
+
+        // --- REGISTRAR EVENTO EN BASE DE DATOS ---
+        GestorSimulacionEvento.RegistrarEvento(
+            GestorSimulacion.idSimulacionActual,
+            estufaEncendida ? "Estufa encendida" : "Estufa apagada",
+            "El usuario interactuo con el control de calor",
+            (int)Time.time
+        );
     }
 
     public bool EstufaEncendida => estufaEncendida;
@@ -194,4 +246,11 @@ public class ControlEvaporizacion : MonoBehaviour
     {
         vaporPS.Stop();
     }
+
+    void CerrarAplicacion()
+    {
+        Debug.Log("Cerrando simulador...");
+        Application.Quit();
+    }
+
 }
