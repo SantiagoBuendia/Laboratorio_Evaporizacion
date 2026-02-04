@@ -1,8 +1,8 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 
 public class ObjetoInteractivo : MonoBehaviour
 {
-    [Header("ExplicaciÛn educativa")]
+    [Header("Explicaci√≥n educativa")]
     [TextArea] public string mensajeExplicacion;
 
     [Header("Tipo de objeto")]
@@ -13,9 +13,9 @@ public class ObjetoInteractivo : MonoBehaviour
     [Header("Mensajes")]
     [TextArea] public string mensajeAccionNevera = "Has tomado un cubo de hielo.";
     [TextArea] public string mensajeAccionOlla = "Has colocado el hielo en la olla.";
-    [TextArea] public string mensajeAccionEstufaEncendida = "La estufa est· encendida.";
+    [TextArea] public string mensajeAccionEstufaEncendida = "La estufa est√° encendida.";
     [TextArea] public string mensajeAccionEstufaApagada = "La estufa se ha apagado.";
-    [TextArea] public string mensajeSinAccion = "No hay acciÛn para este objeto.";
+    [TextArea] public string mensajeSinAccion = "No hay acci√≥n para este objeto.";
 
     [Header("Referencias")]
     public GameObject prefabHielo;
@@ -55,6 +55,14 @@ public class ObjetoInteractivo : MonoBehaviour
         {
             jugador.TomarHielo(prefabHielo);
             mensajeVR?.MostrarMensaje(mensajeAccionNevera);
+
+            GestorSimulacionEvento.RegistrarEvento(
+                GestorSimulacion.idSimulacionActual,
+                "Hielo en olla",
+                "El usuario coloco el hielo sobre la estufa/olla",
+                (int)Time.time
+            );
+
             return;
         }
 
@@ -62,6 +70,14 @@ public class ObjetoInteractivo : MonoBehaviour
         {
             jugador.ColocarHieloEnOlla(olla);
             mensajeVR?.MostrarMensaje(mensajeAccionOlla);
+
+            GestorSimulacionEvento.RegistrarEvento(
+                GestorSimulacion.idSimulacionActual,
+                "Hielo en olla",
+                "El usuario coloco el hielo sobre la estufa/olla",
+                (int)Time.time
+            );
+
             return;
         }
 
@@ -76,9 +92,18 @@ public class ObjetoInteractivo : MonoBehaviour
             olla.ToggleEstufa();
 
             if (olla.EstufaEncendida)
+            {
                 mensajeVR?.MostrarMensaje(mensajeAccionEstufaEncendida);
+
+                GestorSimulacionEvento.RegistrarEvento(GestorSimulacion.idSimulacionActual, "Encendido estufa", "El usuario pulso el boton de encendido", (int)Time.time);
+            }
+
             else
+            {
                 mensajeVR?.MostrarMensaje(mensajeAccionEstufaApagada);
+
+                GestorSimulacionEvento.RegistrarEvento(GestorSimulacion.idSimulacionActual, "Apagado estufa", "El usuario apago la estufa", (int)Time.time);
+            }
 
             return;
         }

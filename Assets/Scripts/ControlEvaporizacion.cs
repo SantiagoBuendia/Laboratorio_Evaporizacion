@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class ControlEvaporizacion : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class ControlEvaporizacion : MonoBehaviour
 
     private float tiempoInicioSimulacion;
     private bool simulacionIniciadaBD = false;
+    private bool peticionEnCurso = false;
 
     // ⬇️ ADICIÓN: límite máximo de temperatura
     private const float TEMPERATURA_MAXIMA = 150f;
@@ -63,8 +65,9 @@ public class ControlEvaporizacion : MonoBehaviour
     {
         if (!jugador.hieloEnOlla) return;
 
-        if (!simulacionIniciadaBD)
+        if (!simulacionIniciadaBD && !peticionEnCurso)
         {
+            peticionEnCurso = true;
             simulacionIniciadaBD = true;
             tiempoInicioSimulacion = Time.time;
 
@@ -74,7 +77,7 @@ public class ControlEvaporizacion : MonoBehaviour
                 "Proceso completo de solido, liquido a gaseoso",
                 "VR"
             );
-            Debug.Log("Simulación iniciada en BD para Usuario: " + SesionUsuario.IdUsuario);
+            StartCoroutine(RegistrarEventoSeguro("Inicio", "Hielo colocado"));
         }
 
         if (!estufaEncendida) return;
@@ -103,6 +106,8 @@ public class ControlEvaporizacion : MonoBehaviour
                 }
 
                 transicionHieloAguaCompleta = true;
+
+                StartCoroutine(RegistrarEventoSeguro("Fusión completa", "El hielo se ha derretido totalmente"));
             }
         }
         else if (transicionHieloAguaCompleta && !aguaEvaporandose && agua != null && agua.activeSelf)
@@ -120,6 +125,8 @@ public class ControlEvaporizacion : MonoBehaviour
             else
             {
                 aguaEvaporandose = true;
+
+                StartCoroutine(RegistrarEventoSeguro("Inicio Evaporación", "El agua ha comenzado a convertirse en gas"));
             }
         }
         else if (aguaEvaporandose && agua != null && agua.activeSelf)
@@ -132,6 +139,8 @@ public class ControlEvaporizacion : MonoBehaviour
 
                 if (!vaporMostrado)
                     MostrarVapor();
+
+                StartCoroutine(RegistrarEventoSeguro("Evaporación completa", "Toda el agua se ha evaporado de la olla"));
 
                 // 1. Registrar resultado final (Temperatura)
                 GestorSimulacionResultado.RegistrarResultado(
@@ -207,13 +216,6 @@ public class ControlEvaporizacion : MonoBehaviour
         if (luzEstufa != null)
             luzEstufa.enabled = estufaEncendida;
 
-        // --- REGISTRAR EVENTO EN BASE DE DATOS ---
-        GestorSimulacionEvento.RegistrarEvento(
-            GestorSimulacion.idSimulacionActual,
-            estufaEncendida ? "Estufa encendida" : "Estufa apagada",
-            "El usuario interactuo con el control de calor",
-            (int)Time.time
-        );
     }
 
     public bool EstufaEncendida => estufaEncendida;
@@ -252,5 +254,24 @@ public class ControlEvaporizacion : MonoBehaviour
         Debug.Log("Cerrando simulador...");
         Application.Quit();
     }
+    IEnumerator RegistrarEventoSeguro(string nombre, string desc)
+    {
+        float tiempoEspera = 0;
+        float maxEspera = 10f; // Si en 10 segundos no hay ID, cancelamos
 
+        while (GestorSimulacion.idSimulacionActual <= 0 && tiempoEspera < maxEspera)
+        {
+            tiempoEspera += Time.deltaTime;
+            yield return null;
+        }
+
+        if (GestorSimulacion.idSimulacionActual > 0)
+        {
+            GestorSimulacionEvento.RegistrarEvento(GestorSimulacion.idSimulacionActual, nombre, desc, (int)Time.time);
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ El evento '{nombre}' no se envió: Tiempo de espera agotado o error de red.");
+        }
+    }
 }
